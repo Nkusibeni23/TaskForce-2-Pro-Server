@@ -10,10 +10,20 @@ const CategorySchema: Schema = new Schema(
       ref: "Category",
       default: null,
     },
+    type: {
+      type: String,
+      enum: ["income", "expense", "both"],
+      default: "both",
+    },
+    description: { type: String, trim: true },
+    isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
 
-CategorySchema.index({ userId: 1, name: 1 }, { unique: true });
+CategorySchema.index(
+  { userId: 1, name: 1, parentCategory: 1 },
+  { unique: true }
+);
 
 export default mongoose.model<ICategory>("Category", CategorySchema);

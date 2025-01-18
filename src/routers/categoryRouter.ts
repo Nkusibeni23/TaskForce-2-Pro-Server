@@ -6,6 +6,7 @@ import {
   getCategoryById,
   updateCategory,
 } from "../controller/categoryController";
+import { requireAuth } from "../middleware/auth.middleware";
 
 const router = express.Router();
 
@@ -47,29 +48,31 @@ const router = express.Router();
 
 /**
  * @swagger
- * /add-category:
- *   post:
- *     summary: Create a new category or subcategory
- *     tags: [Categories]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Category'
- *     responses:
- *       201:
- *         description: The category was successfully created
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Category'
- *       400:
- *         description: Missing required fields
- *       500:
- *         description: Failed to create the category
+ * components:
+ *   schemas:
+ *     Category:
+ *       type: object
+ *       required:
+ *         - name
+ *       properties:
+ *         name:
+ *           type: string
+ *           description: The category name
+ *         parentCategory:
+ *           type: string
+ *           description: ID of parent category (for subcategories)
+ *         type:
+ *           type: string
+ *           enum: [income, expense, both]
+ *           description: Category type
+ *         description:
+ *           type: string
+ *           description: Optional category description
+ *         isActive:
+ *           type: boolean
+ *           description: Whether the category is active
  */
-router.post("/add-category", createCategory);
+router.post("/add-category", requireAuth, createCategory);
 
 /**
  * @swagger
@@ -89,7 +92,7 @@ router.post("/add-category", createCategory);
  *       500:
  *         description: Failed to retrieve categories
  */
-router.get("/get-categories", getAllCategories);
+router.get("/get-categories", requireAuth, getAllCategories);
 
 /**
  * @swagger
@@ -116,7 +119,7 @@ router.get("/get-categories", getAllCategories);
  *       500:
  *         description: Failed to retrieve category
  */
-router.get("/get-category/:id", getCategoryById);
+router.get("/get-category/:id", requireAuth, getCategoryById);
 
 /**
  * @swagger
@@ -149,7 +152,7 @@ router.get("/get-category/:id", getCategoryById);
  *       500:
  *         description: Failed to update category
  */
-router.put("/update-categories/:id", updateCategory);
+router.put("/update-categories/:id", requireAuth, updateCategory);
 
 /**
  * @swagger
@@ -172,6 +175,6 @@ router.put("/update-categories/:id", updateCategory);
  *       500:
  *         description: Failed to delete category
  */
-router.delete("/delete-categories/:id", deleteCategory);
+router.delete("/delete-categories/:id", requireAuth, deleteCategory);
 
 export default router;

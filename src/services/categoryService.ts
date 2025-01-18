@@ -8,41 +8,41 @@ import { CustomError } from "../utils/customError";
 
 export class CategoryService {
   async createCategory(data: CreateCategoryDto): Promise<ICategory> {
-    const { name, parentCategory, userId } = data;
+    const { name, parentCategory, userId, type, description } = data;
 
-    // Check if category with same name exists for this user
+    // Check if category with the same name exists for this user
     const existingCategory = await CategoryModel.findOne({
       name,
       userId,
-      parentCategory: parentCategory ?? null,
+      parentCategory: parentCategory ?? undefined,
     });
 
     if (existingCategory) {
       throw new CustomError("Category with this name already exists", 400);
     }
 
-    // If it's a subcategory, verify parent exists
-    if (parentCategory) {
-      const parentExists = await CategoryModel.findOne({
-        _id: parentCategory,
-        userId,
-      });
-      if (!parentExists) {
-        throw new CustomError("Parent category not found", 404);
-      }
-    }
-
     const category = new CategoryModel({
       name,
-      parentCategory,
+      parentCategory: parentCategory ?? undefined,
       userId,
+      type,
+      description,
+      isActive: true,
     });
 
     return await category.save();
   }
 
-  async getAllCategories(userId: string): Promise<ICategory[]> {
-    return await CategoryModel.find({ userId })
+  async getAllCategories(
+    userId: string,
+    includeInactive: boolean = false
+  ): Promise<ICategory[]> {
+    const query = {
+      userId,
+      ...(includeInactive ? {} : { isActive: true }),
+    };
+
+    return await CategoryModel.find(query)
       .populate("parentCategory", "name")
       .sort({ name: 1 });
   }

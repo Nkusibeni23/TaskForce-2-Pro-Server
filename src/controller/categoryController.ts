@@ -10,6 +10,14 @@ export const createCategory = async (
     const userId = req.auth?.userId;
     if (!userId) throw new CustomError("Unauthorized", 401);
 
+    // Validate type if provided
+    if (
+      req.body.type &&
+      !["income", "expense", "both"].includes(req.body.type)
+    ) {
+      throw new CustomError("Invalid category type", 400);
+    }
+
     const category = await categoryService.createCategory({
       ...req.body,
       userId,
@@ -33,7 +41,12 @@ export const getAllCategories = async (
     const userId = req.auth?.userId;
     if (!userId) throw new CustomError("Unauthorized", 401);
 
-    const categories = await categoryService.getAllCategories(userId);
+    // Add query parameter for including inactive categories
+    const includeInactive = req.query.includeInactive === "true";
+    const categories = await categoryService.getAllCategories(
+      userId,
+      includeInactive
+    );
     res.status(200).json(categories);
   } catch (error) {
     res.status(500).json({ message: "Failed to retrieve categories", error });
@@ -69,6 +82,14 @@ export const updateCategory = async (
   try {
     const userId = req.auth?.userId;
     if (!userId) throw new CustomError("Unauthorized", 401);
+
+    // Validate type if provided
+    if (
+      req.body.type &&
+      !["income", "expense", "both"].includes(req.body.type)
+    ) {
+      throw new CustomError("Invalid category type", 400);
+    }
 
     const category = await categoryService.updateCategory(
       req.params.id,
