@@ -4,23 +4,34 @@ import app from "../../../src/app";
 
 dotenv.config();
 
-// Add request logging middleware
-app.use((req, res, next) => {
-  console.log("Incoming request:", {
-    method: req.method,
-    path: req.path,
-    headers: req.headers,
-    auth: req.auth,
-  });
-  next();
+// Debug route to verify the server is working
+app.get("/api/v1/debug", (req, res) => {
+  res.json({ message: "Debug endpoint working" });
 });
 
-// Add error handling middleware
-app.use((err, req, res, next) => {
-  console.error("Error:", err);
-  res.status(err.status || 500).json({
-    error: err.message || "Internal Server Error",
+// Log all registered routes on startup
+console.log(
+  "Available Routes:",
+  app._router.stack
+    .filter((r) => r.route)
+    .map((r) => ({
+      path: r.route?.path,
+      methods: Object.keys(r.route?.methods || {}),
+    }))
+);
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log("Request Details:", {
+    method: req.method,
+    path: req.path,
+    originalUrl: req.originalUrl,
+    headers: {
+      authorization: req.headers.authorization ? "present" : "missing",
+      "clerk-token": req.headers["clerk-token"] ? "present" : "missing",
+    },
   });
+  next();
 });
 
 export const handler = serverless(app, {
@@ -30,7 +41,7 @@ export const handler = serverless(app, {
       headers: {
         "Access-Control-Allow-Origin":
           process.env.CLIENT_URL || "http://localhost:3000",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS,PATCH",
         "Access-Control-Allow-Headers":
           "Content-Type, Authorization, clerk-token",
         "Access-Control-Allow-Credentials": "true",
