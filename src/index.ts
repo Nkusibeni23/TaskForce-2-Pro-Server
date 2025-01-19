@@ -4,13 +4,13 @@ import app from "./app";
 
 dotenv.config();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
-const server = async () => {
+const startServer = async () => {
   try {
     await DatabaseConnection.connect();
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log("Environment:", {
         nodeEnv: process.env.NODE_ENV,
@@ -22,10 +22,19 @@ const server = async () => {
         },
       });
     });
+
+    // Handle server shutdown
+    process.on("SIGTERM", () => {
+      console.log("Received SIGTERM. Shutting down gracefully...");
+      server.close(() => {
+        console.log("Server closed");
+        process.exit(0);
+      });
+    });
   } catch (error) {
     console.error("Server initialization failed:", error);
     process.exit(1);
   }
 };
 
-server();
+startServer();
