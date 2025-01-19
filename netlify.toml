@@ -5,7 +5,10 @@
 
 [functions]
   node_bundler = "esbuild"
-  included_files = ["src/**/*.ts"]
+  included_files = [
+    "src/**/*",
+    "src/routers/*.ts"  # Explicitly include the routers directory
+  ]
 
 [[redirects]]
   from = "/api-docs"

@@ -3,10 +3,10 @@ import dotenv from "dotenv";
 import app from "../../../src/app";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsDoc from "swagger-jsdoc";
+import path from "path";
 
 dotenv.config();
 
-// Swagger configuration
 const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
@@ -22,12 +22,9 @@ const swaggerOptions = {
       },
     ],
   },
-  apis: [
-    "../../../src/routes/*.ts",
-    "../../../src/routes/**/*.ts",
-    "../../../src/api/*.ts",
-  ],
+  apis: [path.join(__dirname, "../../../src/routers/*.ts")],
 };
+
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
