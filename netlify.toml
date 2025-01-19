@@ -13,6 +13,11 @@
   targetPort = 3001
 
 [[redirects]]
+  from = "/api-docs/*"
+  to = "/.netlify/functions/express-server/api-docs/:splat"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/.netlify/functions/express-server/:splat"
   status = 200
