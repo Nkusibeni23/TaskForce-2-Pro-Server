@@ -10,6 +10,16 @@ import { requireAuth } from "../middleware/auth.middleware";
 
 const router = express.Router();
 
+router.get("/test-auth", (req, res) => {
+  res.json({
+    message: "Auth route working",
+    env: {
+      hasPublishableKey: !!process.env.CLERK_PUBLISHABLE_KEY,
+      hasSecretKey: !!process.env.CLERK_SECRET_KEY,
+    },
+  });
+});
+
 /**
  * @swagger
  * components:
