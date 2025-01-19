@@ -1,43 +1,40 @@
 import serverless from "serverless-http";
 import dotenv from "dotenv";
 import app from "../../../src/app";
-import { DatabaseConnection } from "../../../src/db/db";
 
 dotenv.config();
 
-// Debug middleware
+// Add request logging middleware
 app.use((req, res, next) => {
-  console.log("Request:", {
+  console.log("Incoming request:", {
     method: req.method,
     path: req.path,
     headers: req.headers,
-    userId: req.auth?.userId,
+    auth: req.auth,
   });
   next();
 });
 
-let isConnected = false;
+// Add error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Error:", err);
+  res.status(err.status || 500).json({
+    error: err.message || "Internal Server Error",
+  });
+});
 
-const handler = async (event, context) => {
-  // Make database connection reusable across function invocations
-  context.callbackWaitsForEmptyEventLoop = false;
-
-  if (!isConnected) {
-    try {
-      await DatabaseConnection.connect();
-      isConnected = true;
-      console.log("Database connected");
-    } catch (error) {
-      console.error("Database connection failed:", error);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Database connection failed" }),
-      };
-    }
-  }
-
-  const serverlessHandler = serverless(app);
-  return serverlessHandler(event, context);
-};
-
-export { handler };
+export const handler = serverless(app, {
+  request: {
+    // Add CORS headers
+    response: {
+      headers: {
+        "Access-Control-Allow-Origin":
+          process.env.CLIENT_URL || "http://localhost:3000",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers":
+          "Content-Type, Authorization, clerk-token",
+        "Access-Control-Allow-Credentials": "true",
+      },
+    },
+  },
+});
