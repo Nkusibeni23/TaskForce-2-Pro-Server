@@ -2,10 +2,9 @@ import express from "express";
 import {
   createIncome,
   getIncomes,
-  getIncomeById,
-  updateIncome,
   deleteIncome,
 } from "../controller/incomeController";
+import { requireAuth } from "../middleware/auth.middleware";
 
 const router = express.Router();
 
@@ -47,7 +46,7 @@ const router = express.Router();
  *       400:
  *         description: Bad request
  */
-router.post("/add-income", createIncome);
+router.post("/add-income", requireAuth, createIncome);
 
 /**
  * @swagger
@@ -66,72 +65,7 @@ router.post("/add-income", createIncome);
  *               items:
  *                 type: object
  */
-router.get("/get-incomes", getIncomes);
-
-/**
- * @swagger
- * /api/v1/get-income/{id}:
- *   get:
- *     summary: Get income by ID
- *     description: Fetch a single income entry by its ID
- *     tags: [Incomes]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: The income ID
- *     responses:
- *       200:
- *         description: Income details
- *       404:
- *         description: Income not found
- */
-router.get("/get-income/:id", getIncomeById);
-
-/**
- * @swagger
- * /api/v1/update-income/{id}:
- *   put:
- *     summary: Update an income
- *     description: Update an existing income by its ID
- *     tags: [Incomes]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: The income ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               title:
- *                 type: string
- *               amount:
- *                 type: number
- *               category:
- *                 type: string
- *               description:
- *                 type: string
- *               date:
- *                 type: string
- *                 format: date
- *     responses:
- *       200:
- *         description: Income updated successfully
- *       400:
- *         description: Bad request
- *       404:
- *         description: Income not found
- */
-router.put("/update-income/:id", updateIncome);
-
+router.get("/get-incomes", requireAuth, getIncomes);
 /**
  * @swagger
  * /api/v1/delete-income/{id}:
@@ -152,6 +86,6 @@ router.put("/update-income/:id", updateIncome);
  *       404:
  *         description: Income not found
  */
-router.delete("/delete-income/:id", deleteIncome);
+router.delete("/delete-income/:id", requireAuth, deleteIncome);
 
 export default router;

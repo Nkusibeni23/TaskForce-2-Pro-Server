@@ -1,21 +1,24 @@
-import {
-  CreateExpenseDto,
-  ExpenseQueryParams,
-  UpdateExpenseDto,
-} from "../interfaces/Income.interface";
-import Expense from "../models/ExpenseModel";
 import { CustomError } from "../utils/customError";
+import { IExpense } from "../interfaces/expense.interface";
+import Budget from "../models/BudgetModel";
+import Expense from "../models/ExpenseModel";
 
 export class ExpenseService {
-  async createExpense(data: CreateExpenseDto) {
-    const { userId, title, amount, category, description, date } = data;
+  async createExpense(data: IExpense) {
+    const { userId, title, amount, category, description, date, budget } = data;
 
-    // Validate required fields
-    if (!title || !amount || !category || !date) {
-      throw new CustomError("Missing required fields", 400);
+    // Validate the budget
+    const budgetData = await Budget.findOne({ _id: budget, userId });
+    if (!budgetData) {
+      throw new CustomError("Budget not found", 404);
     }
 
-    // Create new expense
+    // Check if the amount exceeds the remaining budget
+    if (budgetData.currentSpending + amount > budgetData.limit) {
+      throw new CustomError("Expense exceeds budget limit", 400);
+    }
+
+    // Create the expense
     const expense = new Expense({
       userId,
       title,
@@ -23,13 +26,18 @@ export class ExpenseService {
       category,
       description,
       date,
+      budget,
       type: "expense",
     });
+
+    // Update the current spending for the budget
+    budgetData.currentSpending += amount;
+    await budgetData.save();
 
     return await expense.save();
   }
 
-  async getExpenses(userId: string, queryParams: ExpenseQueryParams = {}) {
+  async getExpenses(userId: string, queryParams: any = {}) {
     const {
       startDate,
       endDate,
@@ -40,32 +48,22 @@ export class ExpenseService {
       limit = 10,
     } = queryParams;
 
-    // Build query
     const query: any = { userId };
 
-    // Add date range filter
     if (startDate || endDate) {
       query.date = {};
-      if (startDate) query.date.$gte = startDate;
-      if (endDate) query.date.$lte = endDate;
+      if (startDate) query.date.$gte = new Date(startDate);
+      if (endDate) query.date.$lte = new Date(endDate);
     }
 
-    // Add category filter
-    if (category) {
-      query.category = category;
-    }
-
-    // Add amount range filter
+    if (category) query.category = category;
     if (minAmount || maxAmount) {
       query.amount = {};
       if (minAmount) query.amount.$gte = minAmount;
       if (maxAmount) query.amount.$lte = maxAmount;
     }
 
-    // Calculate pagination
     const skip = (page - 1) * limit;
-
-    // Execute query with pagination
     const [expenses, total] = await Promise.all([
       Expense.find(query).sort({ date: -1 }).skip(skip).limit(limit),
       Expense.countDocuments(query),
@@ -82,34 +80,6 @@ export class ExpenseService {
     };
   }
 
-  async getExpenseById(id: string, userId: string) {
-    const expense = await Expense.findOne({ _id: id, userId });
-
-    if (!expense) {
-      throw new CustomError("Expense not found", 404);
-    }
-
-    return expense;
-  }
-
-  async updateExpense(id: string, userId: string, updates: UpdateExpenseDto) {
-    // Check if expense exists and belongs to user
-    const expense = await this.getExpenseById(id, userId);
-
-    // Update the expense
-    const updatedExpense = await Expense.findOneAndUpdate(
-      { _id: id, userId },
-      { ...updates },
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedExpense) {
-      throw new CustomError("Failed to update expense", 500);
-    }
-
-    return updatedExpense;
-  }
-
   async deleteExpense(id: string, userId: string) {
     const expense = await Expense.findOneAndDelete({ _id: id, userId });
 
@@ -117,39 +87,13 @@ export class ExpenseService {
       throw new CustomError("Expense not found", 404);
     }
 
+    const budget = await Budget.findById(expense.budget);
+    if (budget) {
+      budget.currentSpending -= expense.amount;
+      await budget.save();
+    }
+
     return expense;
-  }
-
-  async getExpenseStats(userId: string, startDate: Date, endDate: Date) {
-    const stats = await Expense.aggregate([
-      {
-        $match: {
-          userId,
-          date: { $gte: startDate, $lte: endDate },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            year: { $year: "$date" },
-            month: { $month: "$date" },
-            category: "$category",
-          },
-          totalAmount: { $sum: "$amount" },
-          count: { $sum: 1 },
-          avgAmount: { $avg: "$amount" },
-        },
-      },
-      {
-        $sort: {
-          "_id.year": 1,
-          "_id.month": 1,
-          totalAmount: -1,
-        },
-      },
-    ]);
-
-    return stats;
   }
 }
 

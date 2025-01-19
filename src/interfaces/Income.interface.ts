@@ -1,9 +1,16 @@
+import mongoose from "mongoose";
+
 export interface IIncome extends Document {
+  userId: string;
   title: string;
   amount: number;
+  type: string;
+  description?: string;
   date: Date;
-  category: string;
-  description: string;
+  account: mongoose.Schema.Types.ObjectId;
+  category: mongoose.Schema.Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface CreateExpenseDto {

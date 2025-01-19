@@ -11,7 +11,6 @@ const AccountSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-// Add compound index for userId and name to ensure unique accounts per user
 AccountSchema.index({ userId: 1, name: 1 }, { unique: true });
 
 export default mongoose.model<IAccount>("Account", AccountSchema);

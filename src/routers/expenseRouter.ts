@@ -2,10 +2,9 @@ import express from "express";
 import {
   createExpense,
   getExpenses,
-  getExpenseById,
-  updateExpense,
   deleteExpense,
 } from "../controller/expenseController";
+import { requireAuth } from "../middleware/auth.middleware";
 
 const router = express.Router();
 
@@ -58,7 +57,7 @@ const router = express.Router();
  *       400:
  *         description: Missing required fields
  */
-router.post("/add-expense", createExpense);
+router.post("/add-expense", requireAuth, createExpense);
 
 /**
  * @swagger
@@ -74,72 +73,7 @@ router.post("/add-expense", createExpense);
  *       500:
  *         description: Server error
  */
-router.get("/get-expenses", getExpenses);
-
-/**
- * @swagger
- * /api/v1/get-expense/{id}:
- *   get:
- *     tags:
- *       - Expenses
- *     summary: Get a single expense by ID
- *     description: Fetch a single expense entry by its ID
- *     parameters:
- *       - name: id
- *         in: path
- *         description: The ID of the expense
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Expense found
- *       404:
- *         description: Expense not found
- */
-router.get("/get-expense/:id", getExpenseById);
-
-/**
- * @swagger
- * /api/v1/update-expense/{id}:
- *   put:
- *     tags:
- *       - Expenses
- *     summary: Update an expense
- *     description: Update an existing expense by its ID
- *     parameters:
- *       - name: id
- *         in: path
- *         description: The ID of the expense to update
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               title:
- *                 type: string
- *               amount:
- *                 type: number
- *               category:
- *                 type: string
- *               description:
- *                 type: string
- *               date:
- *                 type: string
- *                 format: date
- *     responses:
- *       200:
- *         description: Expense updated successfully
- *       404:
- *         description: Expense not found
- */
-router.put("/update-expense/:id", updateExpense);
-
+router.get("/get-expenses", requireAuth, getExpenses);
 /**
  * @swagger
  * /api/v1/delete-expense/{id}:
@@ -161,6 +95,6 @@ router.put("/update-expense/:id", updateExpense);
  *       404:
  *         description: Expense not found
  */
-router.delete("/delete-expense/:id", deleteExpense);
+router.delete("/delete-expense/:id", requireAuth, deleteExpense);
 
 export default router;

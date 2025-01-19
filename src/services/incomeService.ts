@@ -1,19 +1,21 @@
-import {
-  CreateIncomeDto,
-  IncomeQueryParams,
-  UpdateIncomeDto,
-} from "../interfaces/Income.interface";
-import Income from "../models/IncomeModel";
 import { CustomError } from "../utils/customError";
+import { IIncome } from "../interfaces/Income.interface";
+import Income from "../models/IncomeModel";
+import Account from "../models/AccountModel";
+import { createNotification } from "./notificationService";
 
 export class IncomeService {
-  async createIncome(data: CreateIncomeDto) {
-    const { userId, title, amount, category, description, date } = data;
+  async createIncome(data: IIncome) {
+    const { userId, title, amount, category, description, date, account } =
+      data;
 
-    if (!title || !amount || !category || !date) {
-      throw new CustomError("Missing required fields", 400);
+    // Validate the account
+    const accountData = await Account.findOne({ _id: account, userId });
+    if (!accountData) {
+      throw new CustomError("Account not found", 404);
     }
 
+    // Create the income
     const income = new Income({
       userId,
       title,
@@ -21,13 +23,42 @@ export class IncomeService {
       category,
       description,
       date,
+      account,
       type: "income",
     });
 
-    return await income.save();
+    // Start a transaction
+    const session = await Income.startSession();
+    session.startTransaction();
+
+    try {
+      // Save the income
+      await income.save({ session });
+
+      // Update the account balance
+      accountData.balance += amount;
+      await accountData.save({ session });
+
+      // Create a notification
+      await createNotification({
+        userId,
+        type: "income",
+        message: `New income of ${amount} added to ${accountData.name}`,
+        relatedId: income._id.toString(),
+      });
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return income;
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
+    }
   }
 
-  async getIncomes(userId: string, queryParams: IncomeQueryParams = {}) {
+  async getIncomes(userId: string, queryParams: any = {}) {
     const {
       startDate,
       endDate,
@@ -38,19 +69,15 @@ export class IncomeService {
       limit = 10,
     } = queryParams;
 
-    // Build query
     const query: any = { userId };
 
     if (startDate || endDate) {
       query.date = {};
-      if (startDate) query.date.$gte = startDate;
-      if (endDate) query.date.$lte = endDate;
+      if (startDate) query.date.$gte = new Date(startDate);
+      if (endDate) query.date.$lte = new Date(endDate);
     }
 
-    if (category) {
-      query.category = category;
-    }
-
+    if (category) query.category = category;
     if (minAmount || maxAmount) {
       query.amount = {};
       if (minAmount) query.amount.$gte = minAmount;
@@ -58,7 +85,6 @@ export class IncomeService {
     }
 
     const skip = (page - 1) * limit;
-
     const [incomes, total] = await Promise.all([
       Income.find(query).sort({ date: -1 }).skip(skip).limit(limit),
       Income.countDocuments(query),
@@ -75,96 +101,42 @@ export class IncomeService {
     };
   }
 
-  async getIncomeById(id: string, userId: string) {
-    const income = await Income.findOne({ _id: id, userId });
-
-    if (!income) {
-      throw new CustomError("Income not found", 404);
-    }
-
-    return income;
-  }
-
-  async updateIncome(id: string, userId: string, updates: UpdateIncomeDto) {
-    // Verify income exists and belongs to user
-    await this.getIncomeById(id, userId);
-
-    const updatedIncome = await Income.findOneAndUpdate(
-      { _id: id, userId },
-      { ...updates },
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedIncome) {
-      throw new CustomError("Failed to update income", 500);
-    }
-
-    return updatedIncome;
-  }
-
   async deleteIncome(id: string, userId: string) {
-    const income = await Income.findOneAndDelete({ _id: id, userId });
+    const session = await Income.startSession();
+    session.startTransaction();
 
-    if (!income) {
-      throw new CustomError("Income not found", 404);
+    try {
+      const income = await Income.findOneAndDelete(
+        { _id: id, userId },
+        { session }
+      );
+
+      if (!income) {
+        throw new CustomError("Income not found", 404);
+      }
+
+      const account = await Account.findById(income.account);
+      if (account) {
+        account.balance -= income.amount;
+        await account.save({ session });
+      }
+
+      await createNotification({
+        userId,
+        type: "income_deleted",
+        message: `Income of ${income.amount} deleted`,
+        relatedId: income._id.toString(),
+      });
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return income;
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
     }
-
-    return income;
-  }
-
-  async getIncomeStats(userId: string, startDate: Date, endDate: Date) {
-    const stats = await Income.aggregate([
-      {
-        $match: {
-          userId,
-          date: { $gte: startDate, $lte: endDate },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            year: { $year: "$date" },
-            month: { $month: "$date" },
-            category: "$category",
-          },
-          totalAmount: { $sum: "$amount" },
-          count: { $sum: 1 },
-          avgAmount: { $avg: "$amount" },
-        },
-      },
-      {
-        $sort: {
-          "_id.year": 1,
-          "_id.month": 1,
-          totalAmount: -1,
-        },
-      },
-    ]);
-
-    return stats;
-  }
-
-  async getMonthlyIncome(userId: string, year: number) {
-    return await Income.aggregate([
-      {
-        $match: {
-          userId,
-          date: {
-            $gte: new Date(`${year}-01-01`),
-            $lte: new Date(`${year}-12-31`),
-          },
-        },
-      },
-      {
-        $group: {
-          _id: { $month: "$date" },
-          total: { $sum: "$amount" },
-        },
-      },
-      {
-        $sort: { _id: 1 },
-      },
-    ]);
   }
 }
 
