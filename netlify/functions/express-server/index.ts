@@ -22,9 +22,12 @@ const swaggerOptions = {
       },
     ],
   },
-  apis: ["./src/routes/*.ts"],
+  apis: [
+    "../../../src/routes/*.ts",
+    "../../../src/routes/**/*.ts",
+    "../../../src/api/*.ts",
+  ],
 };
-
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 

@@ -5,12 +5,12 @@
 
 [functions]
   node_bundler = "esbuild"
-  included_files = ["./src/swagger.json"]
+  included_files = ["src/**/*.ts"]
 
-[dev]
-  command = "npm run dev"
-  port = 8888
-  targetPort = 3001
+[[redirects]]
+  from = "/api-docs"
+  to = "/.netlify/functions/express-server/api-docs"
+  status = 200
 
 [[redirects]]
   from = "/api-docs/*"
