@@ -1,40 +1,26 @@
 import serverless from "serverless-http";
 import dotenv from "dotenv";
 import app from "../../../src/app";
-import swaggerUi from "swagger-ui-express";
-import swaggerJsDoc from "swagger-jsdoc";
-import path from "path";
-import cors from "cors";
 
 dotenv.config();
 
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "clerk-token"],
-  })
-);
+// Add debugging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
 
-const swaggerOptions = {
-  definition: {
-    openapi: "3.0.0",
-    info: {
-      title: "Task Force Pro API Documentation",
-      version: "1.0.0",
-      description: "API documentation for Task Force Pro",
-    },
-    servers: [
-      {
-        url: "/.netlify/functions/express-server",
-        description: "Netlify Serverless Function",
+export const handler = serverless(app, {
+  binary: true,
+  request: {
+    response: {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers":
+          "Content-Type, Authorization, clerk-token",
+        "Access-Control-Allow-Methods":
+          "GET, POST, PUT, DELETE, PATCH, OPTIONS",
       },
-    ],
+    },
   },
-  apis: [path.join(__dirname, "../../../src/routers/*.ts")],
-};
-
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-
-export const handler = serverless(app);
+});
