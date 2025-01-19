@@ -175,4 +175,8 @@ router.post(
   budgetController.checkExpiredBudgets
 );
 
+router.get("/test-budget", (req, res) => {
+  res.json({ message: "Budget router working" });
+});
+
 export default router;
