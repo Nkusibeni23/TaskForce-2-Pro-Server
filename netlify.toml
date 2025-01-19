@@ -5,20 +5,14 @@
 
 [functions]
   node_bundler = "esbuild"
-  included_files = [
-    "src/**/*",
-    "src/routers/*.ts"  # Explicitly include the routers directory
-  ]
+  included_files = ["src/**/*"]
 
-[[redirects]]
-  from = "/api-docs"
-  to = "/.netlify/functions/express-server/api-docs"
-  status = 200
-
-[[redirects]]
-  from = "/api-docs/*"
-  to = "/.netlify/functions/express-server/api-docs/:splat"
-  status = 200
+[[headers]]
+  for = "/*"
+    [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization, clerk-token"
 
 [[redirects]]
   from = "/*"

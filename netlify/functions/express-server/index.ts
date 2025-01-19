@@ -4,8 +4,17 @@ import app from "../../../src/app";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsDoc from "swagger-jsdoc";
 import path from "path";
+import cors from "cors";
 
 dotenv.config();
+
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "clerk-token"],
+  })
+);
 
 const swaggerOptions = {
   definition: {
