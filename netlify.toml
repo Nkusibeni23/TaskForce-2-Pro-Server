@@ -3,7 +3,16 @@
   functions = "netlify/functions"
   publish = "public"
 
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["./src/swagger.json"]
+
 [dev]
   command = "npm run dev"
   port = 8888
-  targetPort = 3000
+  targetPort = 3001
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/express-server/:splat"
+  status = 200
