@@ -15,6 +15,7 @@
     Access-Control-Allow-Headers = "Content-Type, Authorization, clerk-token"
 
 [[redirects]]
-  from = "/*"
+  from = "/.netlify/functions/express-server/*"
   to = "/.netlify/functions/express-server/:splat"
   status = 200
+  force = true
