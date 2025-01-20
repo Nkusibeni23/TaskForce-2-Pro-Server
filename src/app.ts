@@ -30,15 +30,14 @@ app.use(
 );
 
 // Mount routes explicitly
-const basePath = "/.netlify/functions/express-server";
-app.use(`${basePath}/api/v1`, accountRouter);
-app.use(`${basePath}/api/v1`, budgetRouter);
-app.use(`${basePath}/api/v1`, categoryRouter);
-app.use(`${basePath}/api/v1`, expenseRouter);
-app.use(`${basePath}/api/v1`, incomeRouter);
-app.use(`${basePath}/api/v1`, notificationRouter);
-app.use(`${basePath}/api/v1`, transactionReportRouter);
-app.use(`${basePath}/api/v1`, transactionRouter);
+app.use("/api/v1", accountRouter);
+app.use("/api/v1", budgetRouter);
+app.use("/api/v1", categoryRouter);
+app.use("/api/v1", expenseRouter);
+app.use("/api/v1", incomeRouter);
+app.use("/api/v1", notificationRouter);
+app.use("/api/v1", transactionReportRouter);
+app.use("/api/v1", transactionRouter);
 
 // Swagger route
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
