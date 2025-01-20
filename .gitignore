@@ -1,7 +1,7 @@
 # .gitignore
 node_modules
-.env
 build
 
 # Local Netlify folder
 .netlify
+config.bat

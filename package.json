@@ -22,7 +22,9 @@
     "serverless-http": "^3.2.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "ts": "^0.2.2"
+    "ts": "^0.2.2",
+    "ts-node": "^10.9.1",
+    "@types/node": "^20.0.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
