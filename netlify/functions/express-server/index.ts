@@ -4,11 +4,6 @@ import app from "../../../src/app";
 
 dotenv.config();
 
-// Debug route with full path
-app.get("/.netlify/functions/express-server/api/v1/debug", (req, res) => {
-  res.json({ message: "Debug endpoint working" });
-});
-
 // Additional debug route at root
 app.get("/", (req, res) => {
   res.json({
